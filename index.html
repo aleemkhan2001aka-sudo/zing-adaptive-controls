@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Zing – Adaptive Controls Prototype</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:dark;--card:#16161f;--line:rgba(255,255,255,.13);--mut:#a3a3b2;--acc:#ff3d6e;--acc2:#35e0c3;--nav:64px;--capL:14px;--capR:78px}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:#000;color:#f5f5f7;font:14px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden}
+button{font:inherit;cursor:pointer}
+.stage{height:100%;display:flex;justify-content:center;align-items:center}
+.phone{position:relative;width:100%;height:100%;max-width:412px;max-height:892px;background:#000;overflow:hidden;user-select:none}
+@media(min-width:520px){.phone{height:min(100%,860px);border-radius:32px;border:1px solid var(--line);box-shadow:0 20px 80px rgba(0,0,0,.6)}}
+.feed{position:absolute;inset:0;overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none;overscroll-behavior:contain}
+.feed::-webkit-scrollbar{display:none}
+.slide{position:relative;height:100%;scroll-snap-align:start;scroll-snap-stop:always;overflow:hidden}
+.scene{position:absolute;inset:0;animation:kb 9s ease-in-out infinite alternate}
+@keyframes kb{to{transform:scale(1.07)}}
+.scene svg{position:absolute;left:0;bottom:0;width:100%;height:50%}
+.orb{position:absolute;left:50%;top:38%;width:130px;height:130px;margin:-65px 0 0 -65px;border-radius:50%;filter:blur(1px)}
+.slide::after{content:"";position:absolute;inset:0;background:linear-gradient(rgba(0,0,0,.45),transparent 20%,transparent 55%,rgba(0,0,0,.78));pointer-events:none}
+.paused .scene,.paused .rec,.paused .prog i{animation-play-state:paused}
+.cap{position:absolute;left:0;right:0;bottom:calc(var(--nav) + 18px);padding:0 var(--capR) 0 var(--capL);z-index:2;transition:padding .5s cubic-bezier(.3,.9,.3,1)}
+.user{display:flex;align-items:center;gap:8px;font-weight:700}
+.av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--c1),var(--c2));display:grid;place-items:center;font-weight:800;border:2px solid #fff;flex:none}
+.follow{border:1px solid #fff;border-radius:6px;padding:3px 10px;font-size:12px;font-weight:700;background:none;color:#fff}
+.text{margin-top:8px}
+.audio{margin-top:8px;display:flex;gap:6px;align-items:center;font-size:12.5px;color:#e8e8ee}
+svg.i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.act{position:absolute;left:0;top:0;width:56px;height:58px;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:0;color:#fff;font-size:12px;font-weight:600;transition:transform .55s cubic-bezier(.3,1.15,.4,1);will-change:transform;z-index:5}
+.act .ic{width:42px;height:42px;border-radius:50%;background:rgba(20,20,28,.5);backdrop-filter:blur(6px);display:grid;place-items:center;transition:transform .15s}
+.act:active .ic{transform:scale(.88)}
+.like.on svg{fill:var(--acc);stroke:var(--acc)}
+.save.on svg{fill:#ffc83d;stroke:#ffc83d}
+.disc{height:48px;justify-content:center;pointer-events:none}
+.rec{width:44px;height:44px;border-radius:50%;background:conic-gradient(#222,#666,#222,#666,#222);border:9px solid #111;animation:spin 4s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.top{position:absolute;top:0;left:0;right:0;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;z-index:8}
+.brand{font-weight:900;font-size:21px;letter-spacing:-.5px}.brand span{color:var(--acc)}
+.rg{display:flex;gap:8px;align-items:center}
+.pill{display:flex;align-items:center;gap:6px;padding:6px 11px;border-radius:99px;background:rgba(20,20,28,.75);border:1px solid var(--line);font-size:12px;font-weight:700;white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--acc2)}
+.tune{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:rgba(20,20,28,.75);color:#fff;display:grid;place-items:center}
+.tune.on{background:var(--acc);border-color:var(--acc)}
+.panel{position:absolute;top:56px;left:10px;right:10px;z-index:9;background:rgba(22,22,31,.97);backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:18px;padding:14px;transform:translateY(-10px);opacity:0;pointer-events:none;transition:.25s}
+.panel.open{transform:none;opacity:1;pointer-events:auto}
+.ph{display:flex;justify-content:space-between;align-items:center;font-size:15px}
+.x{background:none;border:0;color:var(--mut);font-size:18px;padding:0 4px}
+.seg{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:#0d0d14;padding:4px;border-radius:12px;margin-top:10px}
+.seg button{border:0;background:none;color:var(--mut);padding:10px 0;border-radius:9px;font-weight:700;font-size:12.5px}
+.seg .sel{background:var(--acc);color:#fff}
+.sub{margin:10px 0;color:var(--mut);font-size:12.5px;min-height:34px}
+.row{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:8px}
+.btn{border:1px solid var(--line);background:#23232f;color:#fff;border-radius:10px;padding:9px 12px;font-weight:700;font-size:12.5px}
+.btn.pri{background:var(--acc2);color:#04221d;border-color:var(--acc2)}
+.btn:disabled{opacity:.4}
+.sw{display:flex;gap:8px;align-items:center;font-size:12.5px;color:#ddd}
+.stat{margin-top:8px;color:#fff;font-weight:600}
+.safe{position:absolute;left:78px;right:78px;top:100px;bottom:calc(var(--nav) + 150px);border:1.5px dashed rgba(53,224,195,.85);border-radius:14px;z-index:2;display:none;pointer-events:none;font-size:11px;color:var(--acc2);padding:4px 8px}
+.safe.on{display:block}
+.reach{position:absolute;inset:0;z-index:6;display:none;touch-action:none;background:rgba(0,0,0,.4)}
+.reach.on{display:block}
+.hint{position:absolute;left:0;right:0;top:56%;text-align:center;font-weight:700;color:#fff;padding:0 40px}
+.tap{position:absolute;width:18px;height:18px;margin:-9px;border-radius:50%;background:var(--acc2);box-shadow:0 0 0 6px rgba(53,224,195,.25)}
+.zone{position:absolute;border-radius:50%;background:radial-gradient(circle,rgba(53,224,195,.3),rgba(53,224,195,.07) 70%);border:1.5px dashed var(--acc2)}
+.prog{position:absolute;left:0;right:0;bottom:var(--nav);height:2px;background:rgba(255,255,255,.2);z-index:4}
+.prog i{display:block;height:100%;background:#fff;width:0;animation:pg 12s linear infinite}
+@keyframes pg{to{width:100%}}
+.nav{position:absolute;bottom:0;left:0;right:0;height:var(--nav);display:flex;background:rgba(0,0,0,.94);border-top:1px solid var(--line);z-index:4}
+.nav button{flex:1;background:none;border:0;color:var(--mut);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:10.5px;font-weight:600}
+.nav .cur{color:#fff}
+.plus{width:44px;height:30px;border-radius:9px;background:linear-gradient(90deg,var(--acc2),var(--acc));display:grid;place-items:center;color:#fff}
+.toast{position:absolute;left:50%;bottom:calc(var(--nav) + 14px);transform:translate(-50%,20px);background:#fff;color:#111;padding:9px 14px;border-radius:99px;font-weight:700;font-size:12.5px;opacity:0;transition:.25s;z-index:12;pointer-events:none;white-space:nowrap}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.burst{position:absolute;font-size:84px;margin:-42px;pointer-events:none;z-index:7;animation:burst .8s forwards}
+@keyframes burst{0%{transform:scale(.4);opacity:1}40%{transform:scale(1.1)}100%{transform:scale(1.4) translateY(-40px);opacity:0}}
+@media(prefers-reduced-motion:reduce){.act,.cap{transition-duration:.01s}.scene,.rec{animation:none}}
+</style>
+</head>
+<body>
+<div class="stage"><div class="phone" id="phone">
+  <div class="feed" id="feed"></div>
+  <div class="safe" id="safe">Focal area · kept clear</div>
+  <div id="acts"></div>
+  <div class="prog"><i id="pg"></i></div>
+  <div class="reach" id="reach"><div class="hint" id="hint">Tap where your thumb reaches comfortably</div></div>
+  <div class="top">
+    <div class="brand">zing<span>.</span></div>
+    <div class="rg"><div class="pill"><span class="dot"></span><span id="lbl">Right Hand</span></div>
+    <button class="tune" id="tune" aria-label="Adaptive Controls"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button></div>
+  </div>
+  <div class="panel" id="panel">
+    <div class="ph"><b>Adaptive Controls</b><button class="x" id="close" aria-label="Close">✕</button></div>
+    <div class="seg" id="seg"><button data-m="right">Right Hand</button><button data-m="left">Left Hand</button><button data-m="auto">Auto</button><button data-m="reach">Reach Test</button></div>
+    <div class="sub" id="sub"></div>
+    <div class="row"><label class="sw"><input type="checkbox" id="safeT"> Show safe zone</label><button class="btn" id="reset">Reset layout</button></div>
+  </div>
+  <nav class="nav" id="nav">
+    <button class="cur"><svg class="i" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v10h-6v-6H9v6H3z"/></svg>Home</button>
+    <button><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Discover</button>
+    <button><span class="plus"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span></button>
+    <button><svg class="i" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>Inbox</button>
+    <button><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>Me</button>
+  </nav>
+  <div class="toast" id="toast"></div>
+</div></div>
+<script>
+const $=s=>document.querySelector(s);
+const phone=$('#phone'),feed=$('#feed'),acts=$('#acts');
+const IC={heart:'<path d="M12 20.5S3.500 15.500 3 9.800C2.800 6.800 5 4.500 7.600 4.500c1.900 0 3.400 1 4.400 2.600 1-1.600 2.500-2.600 4.400-2.600 2.600 0 4.800 2.300 4.600 5.300-.5 5.700-9 10.700-9 10.700z"/>',
+ chat:'<path d="M21 12a8 8 0 0 1-11.600 7.100L4 20.500l1.200-4.800A8 8 0 1 1 21 12z"/>',
+ share:'<path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13"/>',
+ mark:'<path d="M6 3h12v18l-6-4.500L6 21z"/>',
+ note:'<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>'};
+const svg=n=>`<svg class="i" viewBox="0 0 24 24">${IC[n]}</svg>`;
+const V=[
+ {u:'mira.moves',i:'M',c1:'#ff7a45',c2:'#c2358c',t:'Golden hour never misses 🌇 #sunset #citywalk',a:'Sunset Drive · Kairo Beats',l:248300,m:3412,s:9120,b:14200,bg:'linear-gradient(180deg,#2b1055,#c2358c 45%,#ff9a52 75%,#ffd27a)',orb:'radial-gradient(circle,#fff3b0,#ffb347 60%,rgba(255,150,60,0) 72%)',p:'M0 60V34h8v-8h7v12h6V20h9v16h7V28h8v10h8V24h9v14h7V30h8v30z',f:'#1a0b2e'},
+ {u:'chef.noor',i:'N',c1:'#e0a458',c2:'#8a4b1f',t:'60-second chai masala from scratch ☕ #recipe #homemade',a:'Original audio · chef.noor',l:91700,m:1208,s:5340,b:22900,bg:'linear-gradient(160deg,#3a1f12,#8a4b1f 50%,#e0a458)',orb:'radial-gradient(circle,#ffe9c7,#e8b27a 58%,rgba(232,178,122,0) 72%)',p:'M0 60V40Q20 28 40 38T80 34 100 40V60z',f:'#2a140a'},
+ {u:'trailtalk',i:'T',c1:'#2a7fa8',c2:'#0c2a4d',t:'First light over the meadow 🏔️ worth the 4am start #hiking #north',a:'Mountain Air · Lumen',l:1204000,m:15830,s:48100,b:96400,bg:'linear-gradient(180deg,#0c2a4d,#2a7fa8 55%,#bfe9f2)',orb:'radial-gradient(circle,#fff,#d8f3ff 58%,rgba(216,243,255,0) 72%)',p:'M0 60V38L18 14l12 16 10-10 16 22 14-16 14 20 16-8V60z',f:'#08203a'},
+ {u:'pixel.pilot',i:'P',c1:'#ff3d6e',c2:'#35e0c3',t:'Neon city timelapse, shot on a phone 🌃 #nightlife #timelapse',a:'Night Shift · Vora',l:48300,m:640,s:2210,b:7800,bg:'linear-gradient(180deg,#07051a,#2a0a52 50%,#0e7490)',orb:'radial-gradient(circle,#ffd6f5,#ff3d9e 55%,rgba(255,61,158,0) 72%)',p:'M0 60V30h6V18h8v14h6V22h10v12h6V12h9v26h8V26h8v10h7V20h9v18h7V60z',f:'#05030f'}];
+V.forEach(v=>{v.like=false;v.save=false});
+feed.innerHTML=V.map(v=>`<section class="slide"><div class="scene" style="background:${v.bg}"><div class="orb" style="background:${v.orb}"></div><svg viewBox="0 0 100 60" preserveAspectRatio="none"><path d="${v.p}" fill="${v.f}"/></svg></div>
+<div class="cap"><div class="user"><span class="av" style="--c1:${v.c1};--c2:${v.c2}">${v.i.toUpperCase()}</span>@${v.u}<button class="follow">Follow</button></div><div class="text">${v.t}</div><div class="audio">${svg('note').replace('class="i"','class="i" style="width:14px;height:14px"')}${v.a}</div></div></section>`).join('');
+acts.innerHTML=`<button class="act like" data-k="like" aria-label="Like"><span class="ic">${svg('heart')}</span><span class="cnt"></span></button>
+<button class="act" data-k="chat" aria-label="Comment"><span class="ic">${svg('chat')}</span><span class="cnt"></span></button>
+<button class="act" data-k="share" aria-label="Share"><span class="ic">${svg('share')}</span><span class="cnt"></span></button>
+<button class="act save" data-k="save" aria-label="Bookmark"><span class="ic">${svg('mark')}</span><span class="cnt"></span></button>
+<div class="act disc"><span class="rec"></span></div>`;
+const A=[...acts.children],HS=[58,58,58,58,48],GAP=10,NAV=64;
+const fmt=n=>n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(1)+'K':''+n;
+let st={mode:'right',side:'right',yc:null,custom:false,det:'right',taps:[],cur:0};
+const colH=()=>HS.reduce((a,b)=>a+b,0)+GAP*(A.length-1);
+function place(){
+  const w=phone.clientWidth,h=phone.clientHeight,ch=colH();
+  let top=st.yc==null?h-NAV-22-ch:st.yc-ch/2;
+  top=Math.max(96,Math.min(top,h-NAV-ch-8));
+  const x=st.side==='right'?w-56-8:8;let y=top;
+  A.forEach((a,i)=>{a.style.transitionDelay=(i*35)+'ms';a.style.transform=`translate(${x}px,${y}px)`;y+=HS[i]+GAP});
+  const r=document.documentElement.style;
+  r.setProperty('--capL',st.side==='left'?'78px':'14px');r.setProperty('--capR',st.side==='right'?'78px':'14px');
+  return {x,top};
+}
+function centers(){const p=place();let y=p.top;return HS.map((hh,i)=>{const c={x:p.x+28,y:y+hh/2};y+=hh+GAP;return c})}
+function refresh(){
+  const v=V[st.cur];
+  A[0].classList.toggle('on',v.like);A[3].classList.toggle('on',v.save);
+  A[0].querySelector('.cnt').textContent=fmt(v.l+(v.like?1:0));
+  A[1].querySelector('.cnt').textContent=fmt(v.m);
+  A[2].querySelector('.cnt').textContent=fmt(v.s);
+  A[3].querySelector('.cnt').textContent=fmt(v.b+(v.save?1:0));
+}
+let tt;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),1800)}
+function label(){
+  const m=st.mode;let s=m==='right'?'Right Hand':m==='left'?'Left Hand':m==='auto'?'Auto · '+(st.det==='left'?'Left':'Right'):'Reach Test';
+  if(st.custom&&(m==='right'||m==='left'))s+=' · Custom';
+  $('#lbl').textContent=s;
+}
+const SUB={right:'Buttons sit in the lower-right arc of your right thumb, clear of the video’s focal area.',left:'The column mirrors to the lower-left arc for your left thumb. Captions shift to stay readable.',auto:'<div class="row"><button class="btn pri" id="live">Enable sensors</button><button class="btn" id="sim">Simulate</button></div><div class="stat" id="astat"></div><div class="stat" id="dbg" style="font-weight:500;color:#a3a3b2;font-size:11.5px"></div><div class="row"><button class="btn" id="tl">I’m using Left</button><button class="btn" id="tr">I’m using Right</button></div><div class="row"><button class="btn" id="copy">Copy log (0)</button></div>',reach:'Tap at least 3 spots your thumb reaches comfortably.<div class="row"><button class="btn" id="clr">Clear taps</button><button class="btn pri" id="apply" disabled>Apply zone</button></div><div class="stat" id="rstat">0 taps</div>'};
+function setMode(m){
+  st.mode=m;st.custom=false;L.on=false;
+  document.querySelectorAll('#seg button').forEach(b=>b.classList.toggle('sel',b.dataset.m===m));
+  $('#sub').innerHTML=SUB[m];$('#reach').classList.toggle('on',m==='reach');
+  if(m!=='reach'){clearTaps()}
+  if(m==='right'||m==='left'){st.side=m;st.yc=null}
+  if(m==='auto'){st.yc=null;st.side=st.det;$('#astat').textContent='Detected: '+(st.det==='left'?'Left':'Right')+' · 92% confidence'}
+  if(m==='reach'){$('#hint').style.display='';bindReach()}
+  label();place();
+}
+$('#seg').onclick=e=>{const b=e.target.closest('button');if(b)setMode(b.dataset.m)};
+$('#sub').onclick=e=>{
+  if(e.target.id==='sim'){
+    const hand=Math.random()<.5?'left':'right',conf=.55+Math.random()*.44,pc=Math.round(conf*100);
+    const s=$('#astat');
+    if(conf<.75){s.textContent=`Grip reads ${hand} · ${pc}% – too uncertain, layout held`;return}
+    if(hand===st.det){s.textContent=`Detected: ${hand==='left'?'Left':'Right'} · ${pc}% – already in place`;return}
+    st.det=hand;st.side=hand;s.textContent=`Detected: ${hand==='left'?'Left':'Right'} · ${pc}% – layout moved`;label();place();
+  }
+  if(e.target.id==='clr')clearTaps();
+  if(e.target.id==='apply')applyZone();
+  if(['live','tl','tr','copy'].includes(e.target.id))liveClick(e.target.id);
+};
+function clearTaps(){st.taps=[];$('#reach').querySelectorAll('.tap,.zone').forEach(n=>n.remove());const r=$('#rstat');if(r){r.textContent='0 taps';$('#apply').disabled=true}$('#hint').style.display=''}
+function zone(){const n=st.taps.length,cx=st.taps.reduce((a,p)=>a+p.x,0)/n,cy=st.taps.reduce((a,p)=>a+p.y,0)/n;const r=Math.max(70,Math.max(...st.taps.map(p=>Math.hypot(p.x-cx,p.y-cy)))+30);return{cx,cy,r}}
+let reachBound=false;
+function bindReach(){
+  if(reachBound)return;reachBound=true;
+  $('#reach').addEventListener('pointerdown',e=>{
+    const b=phone.getBoundingClientRect(),p={x:e.clientX-b.left,y:e.clientY-b.top};
+    st.taps.push(p);$('#hint').style.display='none';
+    const d=document.createElement('div');d.className='tap';d.style.left=p.x+'px';d.style.top=p.y+'px';$('#reach').appendChild(d);
+    $('#reach').querySelectorAll('.zone').forEach(n=>n.remove());
+    const z=zone(),zn=document.createElement('div');zn.className='zone';
+    Object.assign(zn.style,{left:z.cx-z.r+'px',top:z.cy-z.r+'px',width:z.r*2+'px',height:z.r*2+'px'});
+    $('#reach').insertBefore(zn,$('#reach').firstChild);
+    const n=st.taps.length;$('#rstat').textContent=n+(n===1?' tap':' taps')+(n<3?' · need '+(3-n)+' more':' · zone ready');$('#apply').disabled=n<3;
+  });
+}
+function applyZone(){
+  const z=zone(),w=phone.clientWidth,side=z.cx<w/2?'left':'right';
+  st.side=side;st.yc=z.cy;st.custom=true;st.mode=side;
+  $('#reach').classList.remove('on');
+  document.querySelectorAll('#seg button').forEach(b=>b.classList.toggle('sel',b.dataset.m===side));
+  $('#sub').innerHTML=SUB[side];clearTaps();label();
+  const inside=centers().filter(c=>Math.hypot(c.x-z.cx,c.y-z.cy)<=z.r+28).length;
+  toast(`Applied · ${inside}/5 controls within your reach`);
+}
+$('#reset').onclick=()=>{st.det='right';setMode('right');toast('Layout reset')};
+$('#safeT').onchange=e=>$('#safe').classList.toggle('on',e.target.checked);
+function panel(open){
+  $('#panel').classList.toggle('open',open);$('#tune').classList.toggle('on',open);
+  if(!open&&st.mode==='reach')setMode(st.side);
+}
+$('#tune').onclick=()=>panel(!$('#panel').classList.contains('open'));
+$('#close').onclick=()=>panel(false);
+A.forEach(a=>a.addEventListener('click',()=>{
+  const v=V[st.cur],k=a.dataset.k;
+  if(k==='like'){v.like=!v.like;refresh()}
+  else if(k==='save'){v.save=!v.save;refresh();toast(v.save?'Saved to bookmarks':'Removed from bookmarks')}
+  else if(k==='chat')toast('Comments sheet is not part of this prototype');
+  else if(k==='share')toast('Share sheet would open here');
+}));
+let lt=0,tm;
+feed.addEventListener('click',e=>{
+  if(e.target.closest('.follow')){e.target.textContent=e.target.textContent==='Follow'?'Following':'Follow';return}
+  const n=Date.now();
+  if(n-lt<300){clearTimeout(tm);lt=0;
+    const b=phone.getBoundingClientRect(),h=document.createElement('div');h.className='burst';h.textContent='❤️';h.style.left=e.clientX-b.left+'px';h.style.top=e.clientY-b.top+'px';phone.appendChild(h);setTimeout(()=>h.remove(),800);
+    if(!V[st.cur].like){V[st.cur].like=true;refresh()}
+  }else{lt=n;tm=setTimeout(()=>{const p=phone.classList.toggle('paused');toast(p?'Paused':'Playing')},300)}
+});
+let raf;feed.addEventListener('scroll',()=>{cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{
+  const i=Math.round(feed.scrollTop/feed.clientHeight);
+  if(i!==st.cur&&V[i]){st.cur=i;refresh();phone.classList.remove('paused');const p=$('#pg');p.style.animation='none';void p.offsetWidth;p.style.animation=''}
+})});
+$('#nav').onclick=e=>{const b=e.target.closest('button');if(!b)return;const bs=[...$('#nav').children],i=bs.indexOf(b);if(i!==0&&i!==2)toast('Only the feed is in this prototype')};
+const L={on:false,taps:[],log:[],gamma:0,beta:0,base:null,hasMotion:false,run:0,pend:null,truth:null};
+window.addEventListener('deviceorientation',e=>{if(e.gamma==null)return;L.hasMotion=true;L.gamma=e.gamma;L.beta=e.beta;L.base=L.base==null?e.gamma:L.base*.97+e.gamma*.03});
+function logAdd(o){L.log.push(Object.assign({t:Math.round(performance.now())},o));if(L.log.length>500)L.log.shift();const c=$('#copy');if(c)c.textContent='Copy log ('+L.log.length+')'}
+async function liveClick(id){
+  if(id==='tl'||id==='tr'){L.truth=id==='tl'?'left':'right';toast('Label set: '+L.truth+' hand');return}
+  if(id==='copy'){const s=JSON.stringify(L.log);try{await navigator.clipboard.writeText(s);toast('Log copied')}catch(_){const ta=document.createElement('textarea');ta.value=s;ta.readOnly=true;ta.style.cssText='width:100%;height:70px;background:#0d0d14;color:#fff;border:1px solid #333;border-radius:8px;margin-top:6px';$('#dbg').replaceChildren(ta);ta.select()}return}
+  if(L.on){L.on=false;$('#live').textContent='Enable sensors';$('#astat').textContent='Live detection off';return}
+  let ok=true;
+  try{if(window.DeviceOrientationEvent&&DeviceOrientationEvent.requestPermission){ok=(await DeviceOrientationEvent.requestPermission())==='granted'}}catch(_){ok=false}
+  L.on=true;L.taps=[];L.run=0;L.pend=null;$('#live').textContent='Stop sensors';
+  $('#astat').textContent=ok?'Listening… tap and scroll naturally':'Motion blocked – using touch only';
+  $('#dbg').textContent='Collecting… 0/6 taps';
+}
+phone.addEventListener('pointerdown',e=>{
+  if(!L.on||st.mode!=='auto'||!e.target.closest('#feed'))return;
+  const b=phone.getBoundingClientRect(),nx=(e.clientX-b.left)/b.width,ny=(e.clientY-b.top)/b.height;
+  const dg=L.hasMotion?L.gamma-L.base:0;
+  L.taps.push({nx,dg});if(L.taps.length>12)L.taps.shift();
+  logAdd({k:'tap',nx:+nx.toFixed(3),ny:+ny.toFixed(3),g:Math.round(L.gamma),b:Math.round(L.beta),dg:+dg.toFixed(1),pw:Math.round(e.width),ph:Math.round(e.height),p:+(e.pressure||0).toFixed(2),truth:L.truth,side:st.side});
+  const n=L.taps.length;
+  if(n<6){$('#dbg').textContent='Collecting… '+n+'/6 taps';return}
+  const tx=L.taps.reduce((a,t)=>a+(t.nx-.5)*2,0)/n,ti=L.taps.reduce((a,t)=>a+Math.max(-1,Math.min(1,t.dg/6)),0)/n;
+  const sc=L.hasMotion?.7*tx+.3*ti:tx,hand=sc>=0?'right':'left',conf=Math.min(.99,.5+Math.abs(sc)*.6),pc=Math.round(conf*100);
+  let note='steady';
+  if(hand===st.det){L.run=0;L.pend=null}
+  else if(conf>=.75){
+    if(L.pend===hand)L.run++;else{L.pend=hand;L.run=1}
+    note='switch '+L.run+'/3';
+    if(L.run>=3){st.det=hand;st.side=hand;st.yc=null;L.run=0;L.pend=null;label();place();note='moved';logAdd({k:'switch',to:hand,conf:pc})}
+  }else{L.run=0;L.pend=null;note='low confidence'}
+  $('#dbg').textContent=`touch ${tx.toFixed(2)} · tilt ${L.hasMotion?ti.toFixed(2):'n/a'} → ${hand} ${pc}% · ${note}`;
+  $('#astat').textContent='Detected: '+(st.det==='left'?'Left':'Right');
+});
+new ResizeObserver(place).observe(phone);
+A.forEach(a=>a.style.transition='none');setMode('right');refresh();
+requestAnimationFrame(()=>requestAnimationFrame(()=>A.forEach(a=>a.style.transition='')));
+</script>
+</body>
+</html>
